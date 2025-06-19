@@ -1,0 +1,38 @@
+server:
+  port: 8081  # 更改端口为 8081 或其他未被占用的端口
+
+spring:
+  mvc:
+    async:
+      request-timeout: 0
+    content-negotiation:
+      favor-parameter: false
+      favor-path-extension: false
+      media-types:
+        json: application/json
+  datasource:
+    url: jdbc:mysql://localhost:3306/family?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: xiaochi1221
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      use-new-id-generator-mappings: false
+    show-sql: true
+    format-sql: true
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/*Mapper.xml
+
+# RestTemplate配置
+rest-template:
+  connect-timeout: 5000  # 连接超时时间（毫秒）
+  read-timeout: 5000      # 读取超时时间（毫秒）
+
+gushiwen:
+  search-url: https://www.gushiwen.cn/search.aspx
+
+logging:
+  level:
+    org.example: DEBUG

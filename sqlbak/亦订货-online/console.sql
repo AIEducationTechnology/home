@@ -1,0 +1,1 @@
+select * from sy_send_coupon_record where oa_no='ZQSQ000000797';

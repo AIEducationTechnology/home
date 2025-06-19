@@ -1,14 +1,12 @@
 package org.example;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test for simple App.
  */
 public class AppTest 
-    extends TestCase
 {
     /**
      * Create the test case
@@ -17,22 +15,23 @@ public class AppTest
      */
     public AppTest( String testName )
     {
-        super( testName );
+        // JUnit 5 不再需要构造函数传入测试名称
     }
 
     /**
      * @return the suite of tests being tested
      */
-    public static Test suite()
+    public static void initTestSuite()
     {
-        return new TestSuite( AppTest.class );
+        // JUnit 5 不再需要手动定义测试套件
     }
 
     /**
-     * Rigourous Test :-)
+     * Rigorous Test :-)
      */
+    @Test
     public void testApp()
     {
-        assertTrue( true );
+        assertTrue(true);
     }
 }
