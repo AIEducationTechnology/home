@@ -19,8 +19,12 @@ spring:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
       use-new-id-generator-mappings: false
+      ddl-auto: update
     show-sql: true
-    format-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*Mapper.xml
