@@ -123,6 +123,9 @@
             color: var(--text-color);
             flex-basis: 33%;
         }
+        .bio-item span {
+            white-space: nowrap; /* 防止名称和数字换行 */
+        }
         .bio-icon-btn {
             width: 60px;
             height: 60px;
@@ -144,7 +147,7 @@
         }
         .bio-icon-btn.disabled {
             opacity: 0.5;
-            cursor: not-allowed;
+            cursor: default;
             transform: none !important;
         }
         .count-display {
@@ -430,15 +433,13 @@
                             <button class="bio-icon-btn disabled" id="plant1Btn" onclick="addOrganism('plant1')">
                                 <img src="金鱼藻.PNG" alt="金鱼藻">
                             </button>
-                            <span>金鱼藻</span>
-                            <span id="plant1Count" class="count-display">0</span>
+                            <span>金鱼藻(<span id="plant1Count" class="count-display">0</span>)</span>
                         </div>
                         <div class="bio-item">
                             <button class="bio-icon-btn disabled" id="plant2Btn" onclick="addOrganism('plant2')">
                                 <img src="黑藻.PNG" alt="黑藻">
                             </button>
-                            <span>黑藻</span>
-                            <span id="plant2Count" class="count-display">0</span>
+                            <span>黑藻(<span id="plant2Count" class="count-display">0</span>)</span>
                         </div>
                         <div class="bio-item" style="visibility: hidden;"></div>
                     </div>
@@ -447,22 +448,19 @@
                             <button class="bio-icon-btn disabled" id="animal2Btn" onclick="addOrganism('animal2')">
                                 <img src="斑马鱼.PNG" alt="斑马鱼">
                             </button>
-                            <span>斑马鱼</span>
-                            <span id="animal2Count" class="count-display">0</span>
+                            <span>斑马鱼(<span id="animal2Count" class="count-display">0</span>)</span>
                         </div>
                         <div class="bio-item">
                             <button class="bio-icon-btn disabled" id="animal1Btn" onclick="addOrganism('animal1')">
                                 <img src="水螅.PNG" alt="水螅">
                             </button>
-                            <span>水螅</span>
-                            <span id="animal1Count" class="count-display">0</span>
+                            <span>水螅(<span id="animal1Count" class="count-display">0</span>)</span>
                         </div>
                         <div class="bio-item">
                             <button class="bio-icon-btn disabled" id="animal3Btn" onclick="addOrganism('animal3')">
                                 <img src="椎实螺.PNG" alt="椎实螺">
                             </button>
-                            <span>椎实螺</span>
-                            <span id="animal3Count" class="count-display">0</span>
+                            <span>椎实螺(<span id="animal3Count" class="count-display">0</span>)</span>
                         </div>
                     </div>
                 </div>
@@ -618,32 +616,46 @@
     let chartInstance;
 
     function initChart() {
-        const chartData = {
-            labels: [0],
-            datasets: [
-                { label: '氧气浓度 (mg/L)', data: [8.00], borderColor: '#80c4e8', tension: 0.2, fill: false },
-                { label: '二氧化碳浓度 (%)', data: [5.00], borderColor: '#ff8585', tension: 0.2, fill: false }
-            ]
-        };
-        const config = {
+        // 轻量级初始化，延迟加载完整配置
+        const ctx = document.getElementById('ecoChart').getContext('2d');
+
+        // 先创建空图表
+        chartInstance = new Chart(ctx, {
             type: 'line',
-            data: chartData,
+            data: { labels: [], datasets: [] },
             options: {
-                responsive: true, maintainAspectRatio: false,
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false // 初始禁用动画
+            }
+        });
+
+        // 延迟加载完整配置
+        setTimeout(() => {
+            const chartData = {
+                labels: [0],
+                datasets: [
+                    { label: '氧气浓度 (mg/L)', data: [8.00], borderColor: '#80c4e8', tension: 0.2, fill: false },
+                    { label: '二氧化碳浓度 (%)', data: [5.00], borderColor: '#ff8585', tension: 0.2, fill: false }
+                ]
+            };
+
+            chartInstance.data = chartData;
+            chartInstance.options = {
+                responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     x: { title: { display: true, text: '天数' }, min: 0, max: 7 },
                     y: { title: { display: true, text: '浓度' }, min: 0 }
                 },
-            plugins: {
-                legend: { display: true }
-            },
-            animation: {
-                duration: 500, // 缩短动画时间
-                easing: 'easeOutQuart' // 使用更流畅的缓动函数
-            }
-            }
-        };
-        chartInstance = new Chart(document.getElementById('ecoChart'), config);
+                plugins: { legend: { display: true } },
+                animation: {
+                    duration: 500,
+                    easing: 'easeOutQuart'
+                }
+            };
+            chartInstance.update();
+        }, 500); // 延迟500ms加载完整配置
     }
 
     function clearChart() {
@@ -677,7 +689,7 @@
             vaselineButton.disabled = true;
             vaselineButton.classList.add('disabled');
             vaselineButton.style.opacity = 0.5;
-            vaselineButton.style.cursor = 'not-allowed';
+            vaselineButton.style.cursor = 'default';
         }
     }
 
@@ -728,9 +740,18 @@
         item.src = rates[type].src;
         item.style.width = '100px';
         item.style.height = 'auto';
-        const bottomPosition = 10 + Math.random() * 70;
+        // 确保动植物不超出瓶身 (底部保留10%空间给泥土)
+        const bottomPosition = 15 + Math.random() * 65; // 调整随机范围
         item.style.left = `${Math.random() * 80 + 10}%`;
         item.style.bottom = `${bottomPosition}%`;
+
+        // 检查并限制右侧边界
+        const itemRect = item.getBoundingClientRect();
+        const bottleRect = document.querySelector('.eco-bottle-container').getBoundingClientRect();
+        if (itemRect.right > bottleRect.right - 10) {
+            item.style.left = `${bottleRect.width - itemRect.width - 10}px`;
+        }
+
         ecoBottleItems.appendChild(item);
         updateCounts();
 
@@ -805,10 +826,21 @@
     }
 
     function runSimulation() {
-        const lightFactor = lightSlider.value / 100;
+        const lightValue = lightSlider.value;
+        const lightFactor = lightValue / 100;
         const tempFactor = 1 + (tempSlider.value - 25) / 25;
 
-        const totalPlantOxygen = (organismCounts.plant1 * rates.plant1.oxygen + organismCounts.plant2 * rates.plant2.oxygen) * lightFactor;
+        // 根据光照强度切换背景
+        const bottle = document.querySelector('.eco-bottle-container');
+        if (lightValue == 0) {
+            bottle.style.backgroundColor = '#1a2a3a'; // 黑夜背景
+        } else {
+            bottle.style.backgroundColor = '#e0f7fa'; // 白天背景
+        }
+
+        // 光照为0时不产生氧气
+        const totalPlantOxygen = lightValue == 0 ? 0 :
+            (organismCounts.plant1 * rates.plant1.oxygen + organismCounts.plant2 * rates.plant2.oxygen) * lightFactor;
         const totalAnimalOxygen = (organismCounts.animal1 * rates.animal1.oxygen + organismCounts.animal2 * rates.animal2.oxygen + organismCounts.animal3 * rates.animal3.oxygen) * tempFactor;
 
         const netOxygenChange = (totalPlantOxygen + totalAnimalOxygen) / 100;
@@ -829,7 +861,9 @@
         if (oxygenConcentration < 5) {
             oxygenAlertEl.style.display = 'block';
             oxygenValueEl.classList.add('danger');
-            if (totalPlants === 0) {
+            if (lightValue == 0) {
+                smartAdviceEl.textContent = "警告：光照强度为0，植物无法进行光合作用！";
+            } else if (totalPlants === 0) {
                 smartAdviceEl.textContent = "缺氧严重！请至少添加一些植物，它们是氧气的主要来源。";
             } else if (totalPlants < totalAnimals) {
                 smartAdviceEl.textContent = "氧气不足！植物量偏少，请增加水草数量。";
@@ -862,6 +896,7 @@
                 chartInstance.data.datasets[0].data.shift();
                 chartInstance.data.datasets[1].data.shift();
             }
+
             chartInstance.data.labels.push(day.toFixed(1));
             chartInstance.data.datasets[0].data.push(oxygenConcentration);
             chartInstance.data.datasets[1].data.push(co2Concentration);
@@ -872,7 +907,6 @@
             });
         }
     }
-
     function startSimulation() {
         if (!simulationInterval) {
             simulationInterval = setInterval(runSimulation, 200);
@@ -907,6 +941,10 @@
 
         // 重置密封条件状态
         sealConditions = { water: false, ground: false, organism: false };
+
+        // 重置水和泥土的显示状态
+        document.querySelector('.water-level').style.height = '0';
+        document.querySelector('.ground').style.height = '0';
 
         ecoBottleItems.innerHTML = '';
         oxygenAlertEl.style.display = 'none';
