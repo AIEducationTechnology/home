@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟生态系统瓶 - 最终版</title>
+    <style>
+        :root {
+            --bg-color: #e6f7ff; /* 浅马卡龙蓝 */
+            --panel-bg: #ffffff;
+            --text-color: #4a6c89;
+            --secondary-text-color: #8bb6d3;
+            --primary-color: #80c4e8; /* 主蓝 */
+            --accent-color: #8ce4b4; /* 浅绿 */
+            --danger-color: #ff8585; /* 浅红 */
+            --border-color: #c9e9f9; /* 边框蓝 */
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --dark-green: #228B22; /* 新增墨绿色 */
+        }
+        body {
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            display: grid;
+            grid-template-areas:
+                "top-main"
+                "bottom-main";
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .top-main {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1.5fr;
+            gap: 20px;
+            min-height: 500px;
+        }
+        .bottom-main {
+            padding: 20px;
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .bio-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .bio-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .bio-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            color: var(--text-color);
+            flex-basis: 33%;
+        }
+        .bio-icon-btn {
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            transition: transform 0.2s;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        .bio-icon-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .bio-icon-btn:hover {
+            transform: scale(1.1);
+        }
+        .bio-icon-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .count-display {
+            color: var(--dark-green);
+        }
+        .slider-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid #fff;
+        }
+        .control-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .control-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #startBtn { background-color: var(--accent-color); color: white; }
+        #resetBtn { background-color: var(--danger-color); color: white; }
+        #playStableVideoBtn { background-color: var(--primary-color); color: white; }
+        .eco-bottle-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .eco-bottle-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            min-height: 400px;
+            max-width: 400px;
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            background-color: #e0f7fa;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .ground {
+            height: 10%;
+            background-color: #363636;
+        }
+        .water-level {
+            height: 90%;
+            position: relative;
+        }
+        .eco-bottle-items {
+            position: absolute;
+            width: 95%;
+            height: 85%;
+            top: 5%;
+            left: 2.5%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 10%; /* 确保生物在水里 */
+        }
+        .item {
+            position: absolute;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.5s ease-in-out;
+            animation: float 20s infinite ease-in-out;
+        }
+        .item.plant { font-size: 3rem; color: #2ecc71; }
+        .item.animal { font-size: 2rem; }
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+        .stats-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .data-card {
+            text-align: center;
+            padding: 20px;
+            background-color: var(--border-color);
+            border-radius: 8px;
+        }
+        .data-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .data-unit {
+            font-size: 14px;
+            color: var(--secondary-text-color);
+        }
+        #oxygenValue.danger { color: var(--danger-color); }
+        .alert {
+            background-color: #ffeded;
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+            display: none;
+        }
+        .chart-container {
+            height: 250px;
+            margin-top: 20px;
+        }
+        .knowledge-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        .knowledge-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .knowledge-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f0f8ff;
+            font-size: 12px;
+        }
+        .knowledge-card h4 {
+            color: var(--primary-color);
+            margin-top: 0;
+            font-size: 1rem;
+        }
+        #smartAdvice {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        #smartAdvice h4 {
+            color: var(--text-color);
+        }
+        #smartAdvice p {
+            font-size: 12px;
+            color: var(--secondary-text-color);
+        }
+        .formula {
+            background-color: var(--panel-bg);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 12px;
+            color: var(--secondary-text-color);
+        }
+        .formula p {
+            margin: 0;
+            line-height: 1.5;
+        }
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .video-overlay video {
+            width: 90%;
+            height: auto;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="top-main">
+            <div class="panel controls-panel">
+                <h2>系统控制</h2>
+                <h3>生物添加模块</h3>
+                <div class="bio-controls" id="bioControls">
+                    <div class="bio-row">
+                        <div class="bio-item">
+                            <button class="bio-icon-btn disabled" id="plant1Btn" onclick="addOrganism('plant1')">
+                              <img src="金鱼藻.PNG" alt="金鱼藻">
+                            </button>
+                            <span>金鱼藻</span>
+                            <span id="plant1Count" class="count-display">0</span>
+                        </div>
+                        <div class="bio-item">
+                            <button class="bio-icon-btn disabled" id="plant2Btn" onclick="addOrganism('plant2')">
+                              <img src="黑藻.PNG" alt="黑藻">
+                            </button>
+                            <span>黑藻</span>
+                            <span id="plant2Count" class="count-display">0</span>
+                        </div>
+                        <div class="bio-item" style="visibility: hidden;"></div>
+                    </div>
+                    <div class="bio-row">
+                        <div class="bio-item">
+                            <button class="bio-icon-btn disabled" id="animal2Btn" onclick="addOrganism('animal2')">
+                              <img src="斑马鱼.PNG" alt="斑马鱼">
+                            </button>
+                            <span>斑马鱼</span>
+                            <span id="animal2Count" class="count-display">0</span>
+                        </div>
+                        <div class="bio-item">
+                            <button class="bio-icon-btn disabled" id="animal1Btn" onclick="addOrganism('animal1')">
+                              <img src="水螅.PNG" alt="水螅">
+                            </button>
+                            <span>水螅</span>
+                            <span id="animal1Count" class="count-display">0</span>
+                        </div>
+                        <div class="bio-item">
+                            <button class="bio-icon-btn disabled" id="animal3Btn" onclick="addOrganism('animal3')">
+                              <img src="椎实螺.PNG" alt="椎实螺">
+                            </button>
+                            <span>椎实螺</span>
+                            <span id="animal3Count" class="count-display">0</span>
+                        </div>
+                    </div>
+                </div>
+                <h3>环境控制</h3>
+                <div class="slider-group">
+                    <label for="lightSlider">光照强度: <span id="lightValue">50</span>%</label>
+                    <input type="range" id="lightSlider" min="0" max="100" value="50">
+                </div>
+                <div class="slider-group">
+                    <label for="tempSlider">温度: <span id="tempValue">25</span>°C</label>
+                    <input type="range" id="tempSlider" min="15" max="35" value="25">
+                </div>
+                <div class="slider-group">
+                    <label for="nutrientSlider">营养水平: <span id="nutrientValue">50</span>%</label>
+                    <input type="range" id="nutrientSlider" min="0" max="100" value="50">
+                </div>
+                <div class="control-buttons">
+                    <button id="startBtn">启动</button>
+                    <button id="resetBtn">重置</button>
+                    <button id="playStableVideoBtn">播放稳定视频</button>
+                </div>
+            </div>
+            
+            <div class="panel eco-bottle-panel">
+                <h2>生态系统瓶</h2>
+                <div class="eco-bottle-container">
+                    <div class="water-level"></div>
+                    <div class="ground"></div>
+                    <div class="eco-bottle-items" id="ecoBottleItems"></div>
+                </div>
+                <div style="text-align: center; margin-top: 15px; font-size: 16px; color: var(--secondary-text-color);">
+                    植物总量: <span id="plantTotalCount">0</span> | 动物总量: <span id="animalTotalCount">0</span>
+                </div>
+            </div>
+            
+            <div class="panel stats-panel">
+                <h2>数据监控与趋势预测</h2>
+                <div class="data-grid">
+                    <div class="data-card">
+                        <div>氧气浓度</div>
+                        <div class="data-value" id="oxygenValue">8.00</div>
+                        <div class="data-unit">mg/L</div>
+                    </div>
+                    <div class="data-card">
+                        <div>二氧化碳浓度</div>
+                        <div class="data-value" id="co2Value">5.00</div>
+                        <div class="data-unit">%</div>
+                    </div>
+                </div>
+                <div id="oxygenAlert" class="alert">
+                    ⚠️ 警告：氧气浓度过低，存在缺氧风险！
+                </div>
+                <div class="chart-container">
+                    <canvas id="ecoChart"></canvas>
+                </div>
+                <div id="smartAdvice">
+                    <h4>智能建议</h4>
+                    <p>请启动模拟，系统将根据数据变化提供实时建议。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-main knowledge-panel">
+            <h2>科学知识库</h2>
+            <div class="knowledge-cards">
+                <div class="knowledge-card">
+                    <h4>光合作用与呼吸作用</h4>
+                    <p>植物通过光合作用产生氧气和能量，同时消耗二氧化碳；而所有生物通过呼吸作用消耗氧气并释放二氧化碳，形成生态系统的基本循环。</p>
+                </div>
+                <div class="knowledge-card">
+                    <h4>生态平衡</h4>
+                    <p>一个健康的生态系统需要生产者（植物）和消费者（动物）在数量上保持动态平衡。如果一方数量过多，将打破平衡，导致系统崩溃。</p>
+                </div>
+                <div class="knowledge-card">
+                    <h4>环境因素影响</h4>
+                    <p>光照强度直接影响植物的光合作用效率，而温度则影响所有生物的代谢速率。这些环境因素共同决定着生态系统能否长期稳定。</p>
+                </div>
+                <div class="formula">
+                    <p><strong>计算公式:</strong></p>
+                    <p>净溶氧量 = ∑(植物产氧) - ∑(动物耗氧)</p>
+                    <p>植物产氧 = 数量 × 速率 × (光照/100%)</p>
+                    <p>动物耗氧 = 数量 × 速率 × 温度修正</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="video-overlay" id="videoOverlay" onclick="stopVideo()">
+      <video id="ecoVideo" controls autoplay onended="stopVideo()" onclick="event.stopPropagation();"></video>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const rates = {
+            plant1: { name: '金鱼藻', oxygen: 15, type: 'plant', src: '金鱼藻.PNG' },
+            plant2: { name: '黑藻', oxygen: 12, type: 'plant', src: '黑藻.PNG' },
+            animal1: { name: '水螅', oxygen: -5, type: 'animal', src: '水螅.PNG' },
+            animal2: { name: '斑马鱼', oxygen: -20, type: 'animal', src: '斑马鱼.PNG' },
+            animal3: { name: '椎实螺', oxygen: -8, type: 'animal', src: '椎实螺.PNG' }
+        };
+
+        let organismCounts = { plant1: 0, plant2: 0, animal1: 0, animal2: 0, animal3: 0 };
+        const maxCount = 99;
+
+        const ecoBottleItems = document.getElementById('ecoBottleItems');
+        const lightSlider = document.getElementById('lightSlider');
+        const tempSlider = document.getElementById('tempSlider');
+        const oxygenValueEl = document.getElementById('oxygenValue');
+        const co2ValueEl = document.getElementById('co2Value');
+        const oxygenAlertEl = document.getElementById('oxygenAlert');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const smartAdviceEl = document.getElementById('smartAdvice').querySelector('p');
+        const bioButtons = document.querySelectorAll('.bio-icon-btn');
+        const playStableVideoBtn = document.getElementById('playStableVideoBtn');
+
+        const videoOverlayEl = document.getElementById('videoOverlay');
+        const ecoVideoEl = document.getElementById('ecoVideo');
+
+        let simulationInterval;
+        let oxygenConcentration = 8.00;
+        let co2Concentration = 5.00;
+        let day = 0;
+        let isCollapsed = false;
+
+        let chartInstance;
+
+        function initChart() {
+            const chartData = {
+                labels: [0],
+                datasets: [
+                    { label: '氧气浓度 (mg/L)', data: [8.00], borderColor: '#80c4e8', tension: 0.2, fill: false },
+                    { label: '二氧化碳浓度 (%)', data: [5.00], borderColor: '#ff8585', tension: 0.2, fill: false }
+                ]
+            };
+            const config = {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: '天数' }, min: 0, max: 7 },
+                        y: { title: { display: true, text: '浓度' }, min: 0 }
+                    },
+                    plugins: {
+                        legend: { display: true }
+                    }
+                }
+            };
+            chartInstance = new Chart(document.getElementById('ecoChart'), config);
+        }
+
+        function clearChart() {
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+        }
+
+        function playVideo(videoSrc) {
+            ecoVideoEl.src = videoSrc;
+            videoOverlayEl.style.display = 'flex';
+            ecoVideoEl.play();
+        }
+
+        function playStableVideo() {
+          playVideo('eco-stable.mp4');
+        }
+
+        function stopVideo() {
+            ecoVideoEl.pause();
+            ecoVideoEl.currentTime = 0;
+            videoOverlayEl.style.display = 'none';
+        }
+
+        function addOrganism(type) {
+            if (organismCounts[type] >= maxCount) {
+                alert(`已达到最大数量${maxCount}个`);
+                return;
+            }
+            organismCounts[type]++;
+            const item = document.createElement('img');
+            item.classList.add('item', rates[type].type);
+            item.src = rates[type].src;
+            item.style.width = '100px';
+            item.style.height = 'auto';
+            const bottomPosition = 10 + Math.random() * 70;
+            item.style.left = `${Math.random() * 80 + 10}%`;
+            item.style.bottom = `${bottomPosition}%`;
+            ecoBottleItems.appendChild(item);
+            updateCounts();
+        }
+
+        function updateCounts() {
+            let plantTotal = 0;
+            let animalTotal = 0;
+            for (const type in organismCounts) {
+                document.getElementById(`${type}Count`).textContent = organismCounts[type];
+                if (rates[type].type === 'plant') {
+                    plantTotal += organismCounts[type];
+                } else {
+                    animalTotal += organismCounts[type];
+                }
+            }
+            document.getElementById('plantTotalCount').textContent = plantTotal;
+            document.getElementById('animalTotalCount').textContent = animalTotal;
+        }
+
+        function runSimulation() {
+            const lightFactor = lightSlider.value / 100;
+            const tempFactor = 1 + (tempSlider.value - 25) / 25;
+
+            const totalPlantOxygen = (organismCounts.plant1 * rates.plant1.oxygen + organismCounts.plant2 * rates.plant2.oxygen) * lightFactor;
+            const totalAnimalOxygen = (organismCounts.animal1 * rates.animal1.oxygen + organismCounts.animal2 * rates.animal2.oxygen + organismCounts.animal3 * rates.animal3.oxygen) * tempFactor;
+
+            const netOxygenChange = (totalPlantOxygen + totalAnimalOxygen) / 100;
+            
+            oxygenConcentration += netOxygenChange * 0.1;
+            co2Concentration -= totalPlantOxygen * 0.001;
+            co2Concentration += Math.abs(totalAnimalOxygen) * 0.001;
+
+            oxygenConcentration = Math.max(0, oxygenConcentration);
+            co2Concentration = Math.max(0, co2Concentration);
+
+            oxygenValueEl.textContent = oxygenConcentration.toFixed(2);
+            co2ValueEl.textContent = co2Concentration.toFixed(2);
+
+            const totalPlants = organismCounts.plant1 + organismCounts.plant2;
+            const totalAnimals = organismCounts.animal1 + organismCounts.animal2 + organismCounts.animal3;
+
+            if (oxygenConcentration < 5) {
+                oxygenAlertEl.style.display = 'block';
+                oxygenValueEl.classList.add('danger');
+                if (totalPlants === 0) {
+                    smartAdviceEl.textContent = "缺氧严重！请至少添加一些植物，它们是氧气的主要来源。";
+                } else if (totalPlants < totalAnimals) {
+                    smartAdviceEl.textContent = "氧气不足！植物量偏少，请增加水草数量。";
+                } else if (lightSlider.value < 50) {
+                    smartAdviceEl.textContent = "氧气不足！光照偏弱，请增加光照强度。";
+                } else {
+                    smartAdviceEl.textContent = "系统失衡！请检查生物数量和环境参数，进行调整。";
+                }
+                if (!isCollapsed) {
+                    playVideo('eco-collapse.mp4');
+                    isCollapsed = true;
+                }
+            } else {
+                oxygenAlertEl.style.display = 'none';
+                oxygenValueEl.classList.remove('danger');
+                smartAdviceEl.textContent = "系统运行良好，生产者与消费者数量平衡。";
+                isCollapsed = false;
+            }
+            
+            day += 0.1;
+            if (chartInstance) {
+                if (chartInstance.data.labels.length > 70) {
+                    chartInstance.data.labels.shift();
+                    chartInstance.data.datasets[0].data.shift();
+                    chartInstance.data.datasets[1].data.shift();
+                }
+                chartInstance.data.labels.push(day.toFixed(1));
+                chartInstance.data.datasets[0].data.push(oxygenConcentration);
+                chartInstance.data.datasets[1].data.push(co2Concentration);
+                chartInstance.update();
+            }
+        }
+
+        function startSimulation() {
+            if (!simulationInterval) {
+                simulationInterval = setInterval(runSimulation, 200);
+                startBtn.disabled = true;
+                bioButtons.forEach(btn => btn.classList.remove('disabled'));
+            }
+        }
+
+        function stopSimulation() {
+            clearInterval(simulationInterval);
+            simulationInterval = null;
+        }
+
+        function resetSimulation() {
+            stopSimulation();
+            oxygenConcentration = 8.00;
+            co2Concentration = 5.00;
+            day = 0;
+            organismCounts = { plant1: 0, plant2: 0, animal1: 0, animal2: 0, animal3: 0 };
+            
+            ecoBottleItems.innerHTML = '';
+            oxygenAlertEl.style.display = 'none';
+            oxygenValueEl.classList.remove('danger');
+            oxygenValueEl.textContent = oxygenConcentration.toFixed(2);
+            co2ValueEl.textContent = co2Concentration.toFixed(2);
+            
+            clearChart();
+            initChart();
+            updateCounts();
+            
+            startBtn.disabled = false;
+            bioButtons.forEach(btn => btn.classList.add('disabled'));
+            smartAdviceEl.textContent = "请启动模拟，系统将根据数据变化提供实时建议。";
+            isCollapsed = false;
+        }
+
+        startBtn.addEventListener('click', startSimulation);
+        resetBtn.addEventListener('click', resetSimulation);
+        playStableVideoBtn.addEventListener('click', playStableVideo);
+        
+        lightSlider.addEventListener('input', (e) => {
+            document.getElementById('lightValue').textContent = e.target.value;
+        });
+        tempSlider.addEventListener('input', (e) => {
+            document.getElementById('tempValue').textContent = e.target.value;
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            bioButtons.forEach(btn => btn.classList.add('disabled'));
+            initChart();
+        });
+    </script>
+</body>
+</html>
