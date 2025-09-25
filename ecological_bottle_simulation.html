@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>虚拟生态系统瓶 - 最终版</title>
+    <title>虚拟生态系统瓶</title>
     <style>
         :root {
             --bg-color: #e6f7ff; /* 浅马卡龙蓝 */
@@ -41,8 +41,13 @@
         .top-main {
             display: grid;
             grid-template-columns: 1fr 2fr 1.5fr;
-            gap: 20px;
+            gap: 40px;
             min-height: 500px;
+            align-items: stretch;
+            padding: 0 40px;
+            margin: 0 auto;
+            max-width: 1200px;
+            justify-items: center;
         }
         .bottom-main {
             padding: 20px;
@@ -170,26 +175,67 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             text-align: center;
+            width: 100%;
+            margin: 0;
+            padding: 20px;
+            height: 100%;
         }
         .eco-bottle-container {
             position: relative;
-            height: 100%;
+            height: 50%; /* 降低高度以便看到瓶塞下落 */
             width: 100%;
-            min-height: 400px;
-            max-width: 400px;
+            max-width: 600px;
             border: 2px solid var(--border-color);
-            border-radius: 15px;
+            border-radius: 15px 15px 0 0;
             background-color: #e0f7fa;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
+            padding-top: 10px;
+            margin: 0 auto;
         }
+
+        .water-level {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            background-color: #a8e3f9;
+            transition: height 1s ease-out;
+            z-index: 1;
+            opacity: 0.8; /* 添加透明度使生物更可见 */
+        }
+
         .ground {
-            height: 10%;
-            background-color: #363636;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            background-color: #333;
+            transition: height 0.5s ease-out, background-color 0.5s ease-out;
+            z-index: 2;
+            opacity: 0.9; /* 添加透明度使生物更可见 */
+        }
+
+        .bottle-cork {
+            position: absolute;
+            top: 40px; /* 调整初始位置 */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 30px; /* 降低高度 */
+            background-color: #bfa98e;
+            border-radius: 8px 8px 0 0; /* 顶部圆角 */
+            z-index: 10;
+            margin: 0 auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: block !important; /* 确保显示 */
         }
         .water-level {
             height: 90%;
@@ -213,6 +259,8 @@
             cursor: pointer;
             transition: all 0.5s ease-in-out;
             animation: float 20s infinite ease-in-out;
+            z-index: 10; /* 提高层级确保生物显示在最上层 */
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); /* 添加阴影增强立体感 */
         }
         .item.plant { font-size: 3rem; color: #2ecc71; }
         .item.animal { font-size: 2rem; }
@@ -335,6 +383,39 @@
         <div class="top-main">
             <div class="panel controls-panel">
                 <h2>系统控制</h2>
+                <h3>基础元素</h3>
+                <div class="bio-controls" id="basicElementsControls">
+                    <div class="bio-row">
+                        <div class="bio-item">
+                            <button class="bio-icon-btn" id="water21Btn" onclick="addBasicElement('water21')">
+                              <span style="font-size: 2.5rem; color: #1e90ff;">💧</span>
+                            </button>
+                            <span>1/2水</span>
+                        </div>
+                        <div class="bio-item">
+                            <button class="bio-icon-btn" id="water32Btn" onclick="addBasicElement('water32')">
+                              <span style="font-size: 2.5rem; color: #4682b4;">💧</span>
+                            </button>
+                            <span>2/3水</span>
+                        </div>
+                        <div class="bio-item" style="visibility: hidden;"></div>
+                    </div>
+                    <div class="bio-row">
+                        <div class="bio-item">
+                            <button class="bio-icon-btn" id="siltBtn" onclick="addBasicElement('silt')">
+                              <span style="font-size: 2.5rem;">🪨</span>
+                            </button>
+                            <span>塘泥</span>
+                        </div>
+                        <div class="bio-item">
+                            <button class="bio-icon-btn" id="sandBtn" onclick="addBasicElement('sand')">
+                              <span style="font-size: 2.5rem;">⏳</span>
+                            </button>
+                            <span>泥沙</span>
+                        </div>
+                        <div class="bio-item" style="visibility: hidden;"></div>
+                    </div>
+                </div>
                 <h3>生物添加模块</h3>
                 <div class="bio-controls" id="bioControls">
                     <div class="bio-row">
@@ -378,6 +459,19 @@
                         </div>
                     </div>
                 </div>
+                <h3>密封生态瓶</h3>
+                <div class="bio-controls" id="sealControls">
+                    <div class="bio-row">
+                        <div class="bio-item">
+                            <button class="bio-icon-btn" id="vaselineBtn" onclick="sealBottle()">
+                              <span style="font-size: 2.5rem;">⚪</span>
+                            </button>
+                            <span>凡士林</span>
+                        </div>
+                        <div class="bio-item" style="visibility: hidden;"></div>
+                        <div class="bio-item" style="visibility: hidden;"></div>
+                    </div>
+                </div>
                 <h3>环境控制</h3>
                 <div class="slider-group">
                     <label for="lightSlider">光照强度: <span id="lightValue">50</span>%</label>
@@ -397,19 +491,22 @@
                     <button id="playStableVideoBtn">播放稳定视频</button>
                 </div>
             </div>
-            
+
             <div class="panel eco-bottle-panel">
-                <h2>生态系统瓶</h2>
-                <div class="eco-bottle-container">
-                    <div class="water-level"></div>
-                    <div class="ground"></div>
-                    <div class="eco-bottle-items" id="ecoBottleItems"></div>
-                </div>
+            <div style="position: relative; height: 100px; text-align: center;">
+                <h2 style="margin: 0 auto 10px; display: inline-block;">生态系统瓶</h2>
+                <div class="bottle-cork" id="bottleCork"></div>
+            </div>
+        <div class="eco-bottle-container">
+            <div class="water-level" style="height: 0;"></div>
+            <div class="ground" style="height: 0;"></div>
+            <div class="eco-bottle-items" id="ecoBottleItems"></div>
+        </div>
                 <div style="text-align: center; margin-top: 15px; font-size: 16px; color: var(--secondary-text-color);">
                     植物总量: <span id="plantTotalCount">0</span> | 动物总量: <span id="animalTotalCount">0</span>
                 </div>
             </div>
-            
+
             <div class="panel stats-panel">
                 <h2>数据监控与趋势预测</h2>
                 <div class="data-grid">
@@ -436,7 +533,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="bottom-main knowledge-panel">
             <h2>科学知识库</h2>
             <div class="knowledge-cards">
@@ -461,7 +558,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="video-overlay" id="videoOverlay" onclick="stopVideo()">
       <video id="ecoVideo" controls autoplay onended="stopVideo()" onclick="event.stopPropagation();"></video>
     </div>
@@ -550,6 +647,37 @@
             videoOverlayEl.style.display = 'none';
         }
 
+        function addBasicElement(type) {
+            console.log("添加基础元素:", type);
+
+            switch(type) {
+                case 'water21':
+                case 'water32':
+                    // 水注入动画
+                    const waterLevel = document.querySelector('.water-level');
+                    // 1/2水注入50%高度，2/3水注入66%高度
+                    waterLevel.style.height = type === 'water21' ? '50%' : '66%';
+                    break;
+
+                case 'silt':
+                case 'sand':
+                    // 泥沙/塘泥沉积动画
+                    const ground = document.querySelector('.ground');
+                    ground.style.height = '10%';
+                    ground.style.backgroundColor = type === 'silt' ? '#333' : '#a58f60';
+                    break;
+            }
+
+            // 点击反馈
+            const button = document.getElementById(`${type}Btn`);
+            if (button) {
+                button.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    button.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+
         function addOrganism(type) {
             if (organismCounts[type] >= maxCount) {
                 alert(`已达到最大数量${maxCount}个`);
@@ -566,6 +694,32 @@
             item.style.bottom = `${bottomPosition}%`;
             ecoBottleItems.appendChild(item);
             updateCounts();
+        }
+
+        function sealBottle() {
+            console.log("密封生态瓶");
+
+            const cork = document.getElementById('bottleCork');
+            const bottle = document.querySelector('.eco-bottle-container');
+            if (cork && bottle) {
+                // 计算瓶塞最终位置
+                const bottleRect = bottle.getBoundingClientRect();
+                const finalY = bottleRect.height * 0.05; // 5%的瓶身高处
+
+                // 更自然的盖合动画
+                cork.style.transform = 'translateX(-50%) translateY(-15px)';
+                setTimeout(() => {
+                    cork.style.transform = `translateX(-50%) translateY(${finalY}px)`;
+                }, 300);
+
+                // 添加瓶塞弹跳效果
+                setTimeout(() => {
+                    cork.style.transform = `translateX(-50%) translateY(${finalY-5}px)`;
+                }, 500);
+                setTimeout(() => {
+                    cork.style.transform = `translateX(-50%) translateY(${finalY}px)`;
+                }, 600);
+            }
         }
 
         function updateCounts() {
@@ -591,7 +745,7 @@
             const totalAnimalOxygen = (organismCounts.animal1 * rates.animal1.oxygen + organismCounts.animal2 * rates.animal2.oxygen + organismCounts.animal3 * rates.animal3.oxygen) * tempFactor;
 
             const netOxygenChange = (totalPlantOxygen + totalAnimalOxygen) / 100;
-            
+
             oxygenConcentration += netOxygenChange * 0.1;
             co2Concentration -= totalPlantOxygen * 0.001;
             co2Concentration += Math.abs(totalAnimalOxygen) * 0.001;
@@ -627,7 +781,7 @@
                 smartAdviceEl.textContent = "系统运行良好，生产者与消费者数量平衡。";
                 isCollapsed = false;
             }
-            
+
             day += 0.1;
             if (chartInstance) {
                 if (chartInstance.data.labels.length > 70) {
@@ -661,17 +815,17 @@
             co2Concentration = 5.00;
             day = 0;
             organismCounts = { plant1: 0, plant2: 0, animal1: 0, animal2: 0, animal3: 0 };
-            
+
             ecoBottleItems.innerHTML = '';
             oxygenAlertEl.style.display = 'none';
             oxygenValueEl.classList.remove('danger');
             oxygenValueEl.textContent = oxygenConcentration.toFixed(2);
             co2ValueEl.textContent = co2Concentration.toFixed(2);
-            
+
             clearChart();
             initChart();
             updateCounts();
-            
+
             startBtn.disabled = false;
             bioButtons.forEach(btn => btn.classList.add('disabled'));
             smartAdviceEl.textContent = "请启动模拟，系统将根据数据变化提供实时建议。";
@@ -681,7 +835,7 @@
         startBtn.addEventListener('click', startSimulation);
         resetBtn.addEventListener('click', resetSimulation);
         playStableVideoBtn.addEventListener('click', playStableVideo);
-        
+
         lightSlider.addEventListener('input', (e) => {
             document.getElementById('lightValue').textContent = e.target.value;
         });
