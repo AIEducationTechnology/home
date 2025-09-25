@@ -480,7 +480,10 @@
             </div>
 
             <div id="video-display-area">
-                <video id="embeddedEcoVideo" loop></video>
+                <div id="video-loading-message" style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); font-size: 16px;">
+                    视频加载中，请稍候...
+                </div>
+                <video id="embeddedEcoVideo" loop style="display: none;"></video>
             </div>
 
             <div id="environment-area" style="display: none;">
@@ -666,9 +669,27 @@
     }
 
     function playVideo(videoSrc) {
-        embeddedEcoVideoEl.src = videoSrc;
+        const loadingMessage = document.getElementById('video-loading-message');
+
+        // 显示加载提示
+        loadingMessage.style.display = 'flex';
+        embeddedEcoVideoEl.style.display = 'none';
         videoDisplayAreaEl.style.display = 'block';
-        embeddedEcoVideoEl.play();
+
+        // 设置视频源
+        embeddedEcoVideoEl.src = videoSrc;
+
+        // 视频加载完成后隐藏提示并显示视频
+        embeddedEcoVideoEl.oncanplay = function() {
+            loadingMessage.style.display = 'none';
+            embeddedEcoVideoEl.style.display = 'block';
+            embeddedEcoVideoEl.play();
+        };
+
+        // 处理加载错误
+        embeddedEcoVideoEl.onerror = function() {
+            loadingMessage.textContent = '视频加载失败，请刷新页面重试';
+        };
     }
 
     function playCollapseVideo() {
