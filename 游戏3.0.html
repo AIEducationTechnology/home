@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密封生态瓶模拟器</title>
+    <style>
+        /* 整体布局和字体 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f4ef;
+            transition: background-color 1s ease;
+        }
+
+        body.night {
+            background-color: #313331;
+        }
+
+        .container {
+            display: flex;
+            width: 1200px;
+            height: 800px;
+            background-color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* 左侧操作区 */
+        .left-panel {
+            width: 400px;
+            background-color: #f7f9f7;
+            padding: 20px;
+            box-sizing: border-box;
+            border-right: 2px solid #e1e8e4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        /* 右侧显示区 */
+        .right-display {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .main-title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            font-weight: bold;
+            color: #4a7c64;
+            display: none;
+        }
+        
+        .panel-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a7c64;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* 模块样式 */
+        .panel-section {
+            background-color: #fff;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.03);
+        }
+        
+        .panel-section.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #558b6e;
+            margin-bottom: 10px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            text-align: center;
+        }
+        
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .grid-item.selected .icon-placeholder {
+            border: 2px solid #4a7c64;
+            transform: scale(1.1);
+        }
+
+        .grid-item .icon-placeholder {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            background-color: #e1e8e4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        /* 数量徽章 */
+        .item-count-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #e57373;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            line-height: 20px;
+            font-weight: bold;
+        }
+        
+        .grid-item p {
+            margin: 0;
+            color: #666;
+            font-size: 13px;
+        }
+
+        /* 按钮样式 */
+        .start-btn-container {
+            position: absolute;
+            z-index: 100;
+        }
+        .btn {
+            padding: 12px 25px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn.start {
+            background-color: #4fc3f7;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .btn.reset {
+            background-color: #e57373;
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .btn.reset:hover { background-color: #d36a6a; }
+
+        .info-bar {
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+            min-height: 20px;
+            transition: color 0.3s;
+        }
+
+        .info-bar.warning {
+            color: #e57373;
+            font-weight: bold;
+        }
+
+        .status-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 400px;
+            margin-top: 20px;
+        }
+        
+        .status-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .status-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .status-fill {
+            height: 100%;
+            background-color: #66bb6a;
+            transition: width 0.5s ease-in-out;
+        }
+        
+        .status-label {
+            font-size: 12px;
+            color: #555;
+            text-align: left;
+        }
+        
+        /* SVG 瓶子样式 */
+        .bottle-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            display: none;
+        }
+
+        .bottle-svg {
+            width: 100%;
+            height: 500px;
+            overflow: visible;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));
+            z-index: 10;
+        }
+
+        .bottle-body {
+            fill: #e6f5ea;
+            stroke: #a8d5b1;
+            stroke-width: 5;
+        }
+
+        .bottle-base {
+            fill: #7c7c7c;
+        }
+        
+        .bottle-sediment {
+            fill: transparent;
+            transition: fill 1s ease-in-out;
+        }
+        
+        .silt-color { fill: #4a4a4a !important; }
+        .sand-color { fill: #d2c09c !important; }
+
+        .bottle-liquid {
+            fill: #a8e3f9;
+            transition: d 1s ease-out;
+        }
+        .cork {
+            fill: #bfa98e;
+            transform-origin: 50% 50%;
+            transition: transform 0.5s ease-out;
+            transform: translateY(0); /* 初始悬空 */
+        }
+        
+        /* 动态生物图标 */
+        .organism-icon {
+            position: absolute;
+            font-size: 20px;
+            transition: transform 1s ease-in-out, opacity 0.5s;
+            z-index: 20;
+        }
+        
+        .day-night-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #f7b731;
+            color: white;
+            display: none;
+        }
+        .day-night-btn.night {
+            background-color: #607d8b;
+        }
+
+        /* 夜晚模式遮罩 */
+        .night-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .night-overlay-text {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* 初始界面 */
+        .initial-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f4ef;
+            z-index: 100;
+        }
+        .initial-title {
+            font-size: 40px;
+            font-weight: bold;
+            color: #4a7c64;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="initial-screen" id="initial-screen">
+        <h1 class="initial-title">制作密封生态系统瓶</h1>
+        <button class="btn start" id="start-btn">开始</button>
+    </div>
+
+    <div class="container" id="main-container" style="display: none;">
+        <div class="left-panel">
+            <h1 class="panel-title" id="left-title"></h1>
+            
+            <div class="panel-section" id="basic-elements-panel">
+                <div class="section-title">基础元素</div>
+                <div class="grid-container">
+                    <div class="grid-item" data-item="water">
+                        <div class="icon-placeholder">💧</div>
+                        <p>水</p>
+                    </div>
+                    <div class="grid-item disabled" data-item="silt">
+                        <div class="icon-placeholder">🪨</div>
+                        <p>塘泥</p>
+                    </div>
+                    <div class="grid-item disabled" data-item="sand">
+                        <div class="icon-placeholder">⏳</div>
+                        <p>泥沙</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section disabled" id="organisms-panel">
+                <div class="section-title">生物添加模块</div>
+                <div class="grid-container">
+                    <div class="grid-item" data-item="plant1">
+                        <div class="icon-placeholder">🌿</div>
+                        <p>茨藻</p>
+                        <span class="item-count-badge" id="plant1-count" style="display: none;">0</span>
+                    </div>
+                    <div class="grid-item" data-item="plant2">
+                        <div class="icon-placeholder">🍀</div>
+                        <p>金鱼藻</p>
+                        <span class="item-count-badge" id="plant2-count" style="display: none;">0</span>
+                    </div>
+                    <div class="grid-item" data-item="plant3">
+                        <div class="icon-placeholder">🌱</div>
+                        <p>黑藻</p>
+                        <span class="item-count-badge" id="plant3-count" style="display: none;">0</span>
+                    </div>
+                    <div class="grid-item" data-item="animal1">
+                        <div class="icon-placeholder">👾</div>
+                        <p>水蚤</p>
+                        <span class="item-count-badge" id="animal1-count" style="display: none;">0</span>
+                    </div>
+                    <div class="grid-item" data-item="animal2">
+                        <div class="icon-placeholder">🐛</div>
+                        <p>水螅</p>
+                        <span class="item-count-badge" id="animal2-count" style="display: none;">0</span>
+                    </div>
+                    <div class="grid-item" data-item="animal3">
+                        <div class="icon-placeholder">🐚</div>
+                        <p>螺</p>
+                        <span class="item-count-badge" id="animal3-count" style="display: none;">0</span>
+                    </div>
+                    <div class="grid-item" data-item="animal4">
+                        <div class="icon-placeholder">🐟</div>
+                        <p>斑马鱼</p>
+                        <span class="item-count-badge" id="animal4-count" style="display: none;">0</span>
+                    </div>
+                    <div class="grid-item" data-item="animal5">
+                        <div class="icon-placeholder">🐡</div>
+                        <p>泥鳅</p>
+                        <span class="item-count-badge" id="animal5-count" style="display: none;">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section disabled" id="final-step-panel">
+                <div class="section-title">密封生态瓶</div>
+                <div class="grid-container">
+                    <div class="grid-item" data-item="vaseline">
+                        <div class="icon-placeholder">⚪</div>
+                        <p>凡士林</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn reset" id="reset-btn">重置</button>
+        </div>
+
+        <div class="right-display">
+            <h1 class="panel-title" id="right-title"></h1>
+            
+            <div class="bottle-container" id="bottle-main-container">
+                <svg id="bottle-svg" class="bottle-svg" viewBox="0 0 200 300">
+                    <path id="bottle-body" class="bottle-body" d="M 50, 280 V 50 H 150 V 280 C 150, 290, 140, 295, 100, 295 C 60, 295, 50, 290, 50, 280 Z" />
+                    <path id="bottle-base" class="bottle-base" d="M 50, 280 C 50, 290, 60, 295, 100, 295 C 140, 295, 150, 290, 150, 280 Z" />
+                    <path id="bottle-sediment" class="bottle-sediment" />
+                    <path id="bottle-liquid" class="bottle-liquid" />
+                    <rect id="bottle-cork" class="cork" x="70" y="20" width="60" height="20" rx="10" ry="10" />
+                </svg>
+                <div class="night-overlay" id="night-overlay">
+                    <div class="night-overlay-text">黑夜不产生光合作用</div>
+                </div>
+                <div id="organism-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+            </div>
+
+            <button class="day-night-btn" id="day-night-btn">夜晚模式</button>
+            
+            <div class="info-bar" id="system-status"></div>
+
+            <div class="status-bars" id="status-bars" style="display: none;">
+                <div class="status-section">
+                    <div class="status-label">氧气水平: <span id="oxygen-text">100%</span></div>
+                    <div class="status-bar"><div class="status-fill" id="oxygen-bar"></div></div>
+                </div>
+                <div class="status-section">
+                    <div class="status-label">二氧化碳水平: <span id="co2-text">0%</span></div>
+                    <div class="status-bar"><div class="status-fill" id="co2-bar"></div></div>
+                </div>
+                <div class="status-section">
+                    <div class="status-label">营养水平: <span id="nutrient-text">50%</span></div>
+                    <div class="status-bar"><div class="status-fill" id="nutrient-bar"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 定义生物和资源属性
+        const resources = {
+            oxygen: 100,
+            co2: 0,
+            nutrient: 50
+        };
+
+        const population = {
+            water: false,
+            silt: false,
+            sand: false,
+            plant1: 0, plant2: 0, plant3: 0,
+            animal1: 0, animal2: 0, animal3: 0, animal4: 0, animal5: 0,
+            vaseline: false
+        };
+
+        const organismSpecificRates = {
+            plant1: { o2_prod: 0.5, co2_con: 0.4, o2_con: 0.05, co2_prod: 0.06, waste_prod: 0.05, icon: '🌿' },
+            plant2: { o2_prod: 0.7, co2_con: 0.6, o2_con: 0.08, co2_prod: 0.09, waste_prod: 0.07, icon: '🍀' },
+            plant3: { o2_prod: 0.6, co2_con: 0.5, o2_con: 0.07, co2_prod: 0.08, waste_prod: 0.06, icon: '🌱' },
+            animal1: { o2_con: 0.1, co2_prod: 0.12, waste_prod: 0.05, icon: '👾' }, // 水蚤
+            animal2: { o2_con: 0.3, co2_prod: 0.35, waste_prod: 0.15, icon: '🐛' }, // 水螅
+            animal3: { o2_con: 0.2, co2_prod: 0.23, waste_prod: -0.1, icon: '🐚' }, // 螺
+            animal4: { o2_con: 0.5, co2_prod: 0.6, waste_prod: 0.2, icon: '🐟' }, // 斑马鱼
+            animal5: { o2_con: 0.4, co2_prod: 0.45, waste_prod: 0.18, icon: '🐡' } // 泥鳅
+        };
+
+        let isSealed = false;
+        let isDay = true;
+        let simulationInterval;
+        let organismAnimationInterval;
+        let gameStage = 'initial';
+        let organismElements = {};
+
+        // 获取 DOM 元素
+        const body = document.body;
+        const initialScreen = document.getElementById('initial-screen');
+        const mainContainer = document.getElementById('main-container');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const dayNightBtn = document.getElementById('day-night-btn');
+        const basicElementsPanel = document.getElementById('basic-elements-panel');
+        const organismsPanel = document.getElementById('organisms-panel');
+        const finalStepPanel = document.getElementById('final-step-panel');
+        const leftTitle = document.getElementById('left-title');
+        const rightTitle = document.getElementById('right-title');
+        const bottleMainContainer = document.getElementById('bottle-main-container');
+        const bottleBody = document.getElementById('bottle-body');
+        const liquidPath = document.getElementById('bottle-liquid');
+        const sedimentPath = document.getElementById('bottle-sediment');
+        const bottleCork = document.getElementById('bottle-cork');
+        const organismContainer = document.getElementById('organism-container');
+        const systemStatusSpan = document.getElementById('system-status');
+        const statusBars = document.getElementById('status-bars');
+        const nightOverlay = document.getElementById('night-overlay');
+        const allPanels = [basicElementsPanel, organismsPanel, finalStepPanel];
+
+        // 瓶子 SVG 路径数据
+        const cylinderPath = "M 50, 280 V 50 H 150 V 280 C 150, 290, 140, 295, 100, 295 C 60, 295, 50, 290, 50, 280 Z";
+        const liquidHeight = 0.66;
+        const liquidTopY = 280 - (280 - 50) * liquidHeight;
+
+        // 更新 UI
+        function updateUI() {
+            document.getElementById('oxygen-bar').style.width = `${resources.oxygen}%`;
+            document.getElementById('co2-bar').style.width = `${resources.co2}%`;
+            document.getElementById('nutrient-bar').style.width = `${resources.nutrient}%`;
+            
+            const o2Text = document.getElementById('oxygen-text');
+            const co2Text = document.getElementById('co2-text');
+            const nutrientText = document.getElementById('nutrient-text');
+            
+            o2Text.textContent = `${resources.oxygen.toFixed(1)}%`;
+            co2Text.textContent = `${resources.co2.toFixed(1)}%`;
+            nutrientText.textContent = `${resources.nutrient.toFixed(1)}%`;
+
+            Object.keys(population).forEach(key => {
+                if (key.startsWith('plant') || key.startsWith('animal')) {
+                    const countBadge = document.getElementById(`${key}-count`);
+                    if (countBadge) {
+                        const count = Math.round(population[key]);
+                        if (count > 0) {
+                            countBadge.textContent = count;
+                            countBadge.style.display = 'block';
+                        } else {
+                            countBadge.style.display = 'none';
+                        }
+                    }
+                }
+            });
+            updateOrganismVisuals();
+        }
+
+        // 游戏状态和阶段管理
+        function updateStage(stage) {
+            gameStage = stage;
+            
+            initialScreen.style.display = stage === 'initial' ? 'flex' : 'none';
+            mainContainer.style.display = stage !== 'initial' ? 'flex' : 'none';
+            
+            allPanels.forEach(panel => panel.classList.add('disabled'));
+            if (stage === 'basic') {
+                basicElementsPanel.classList.remove('disabled');
+                document.querySelector('.grid-item[data-item="silt"]').classList.add('disabled');
+                document.querySelector('.grid-item[data-item="sand"]').classList.add('disabled');
+            }
+            if (stage === 'organisms') {
+                basicElementsPanel.classList.add('disabled');
+                organismsPanel.classList.remove('disabled');
+                finalStepPanel.classList.remove('disabled');
+            }
+            if (stage === 'sealed') {
+                allPanels.forEach(panel => panel.classList.add('disabled'));
+                statusBars.style.display = 'flex';
+                dayNightBtn.style.display = 'block';
+            }
+            
+            if (stage === 'initial') {
+                leftTitle.textContent = '';
+                rightTitle.textContent = '';
+                bottleMainContainer.style.display = 'none';
+                statusBars.style.display = 'none';
+                organismContainer.innerHTML = '';
+                dayNightBtn.style.display = 'none';
+            } else if (stage === 'basic') {
+                leftTitle.textContent = '选择元素';
+                rightTitle.textContent = '密封生态瓶';
+                systemStatusSpan.textContent = '请先添加水，然后选择基质。';
+                bottleMainContainer.style.display = 'flex';
+            } else if (stage === 'organisms') {
+                leftTitle.textContent = '选择元素';
+                rightTitle.textContent = '添加生物';
+                systemStatusSpan.textContent = '请添加至少一种植物和一种动物。';
+            } else if (stage === 'sealed') {
+                leftTitle.textContent = '生态瓶配置';
+                rightTitle.textContent = '模拟进行中...';
+            }
+        }
+
+        // 游戏操作事件监听
+        startBtn.addEventListener('click', () => {
+            updateStage('basic');
+        });
+        
+        document.querySelectorAll('#basic-elements-panel .grid-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.item;
+                if (type === 'water' && !population.water) {
+                    population.water = true;
+                    item.classList.add('selected');
+                    document.querySelector('.grid-item[data-item="silt"]').classList.remove('disabled');
+                    document.querySelector('.grid-item[data-item="sand"]').classList.remove('disabled');
+                    systemStatusSpan.textContent = '水已添加，请选择基质。';
+                    animateWater();
+                } else if ((type === 'silt' || type === 'sand') && population.water && !population.silt && !population.sand) {
+                    population.silt = (type === 'silt');
+                    population.sand = (type === 'sand');
+                    item.classList.add('selected');
+                    document.querySelectorAll('#basic-elements-panel .grid-item').forEach(el => {
+                        if (el.dataset.item !== type && el.dataset.item !== 'water') {
+                            el.classList.add('disabled');
+                        }
+                    });
+                    systemStatusSpan.textContent = `${type === 'silt' ? '塘泥' : '泥沙'}已添加！`;
+                    animateSediment(type);
+                    checkReadyForOrganisms();
+                }
+            });
+        });
+
+        function animateWater() {
+            const waterPath = `M50,280 C50,290,60,295,100,295 C140,295,150,290,150,280 V${liquidTopY} H50 V280 Z`;
+            liquidPath.setAttribute('d', waterPath);
+        }
+
+        function animateSediment(type) {
+             const sedimentPathD = `M50,280 C50,290,60,295,100,295 C140,295,150,290,150,280 V270 H50 V280 Z`;
+             sedimentPath.setAttribute('d', sedimentPathD);
+             sedimentPath.classList.add(type === 'silt' ? 'silt-color' : 'sand-color');
+        }
+
+        document.querySelectorAll('#organisms-panel .grid-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.item;
+                if (population[type] < 10) {
+                    population[type]++;
+                    updateUI();
+                    systemStatusSpan.textContent = `已添加${item.querySelector('p').textContent.trim()}！`;
+                    checkReadyToSeal();
+                }
+            });
+        });
+
+        function createOrganismElement(type) {
+            const icon = document.createElement('div');
+            icon.className = 'organism-icon';
+            icon.textContent = organismSpecificRates[type].icon;
+            organismContainer.appendChild(icon);
+            return icon;
+        }
+
+        function updateOrganismVisuals() {
+            Object.keys(organismSpecificRates).forEach(type => {
+                const currentCount = Math.round(population[type]);
+                const visualCount = organismElements[type] ? organismElements[type].length : 0;
+                
+                if (currentCount > visualCount) {
+                    for (let i = visualCount; i < currentCount; i++) {
+                        const icon = createOrganismElement(type);
+                        if (!organismElements[type]) organismElements[type] = [];
+                        organismElements[type].push(icon);
+                        setRandomPosition(icon);
+                    }
+                } else if (currentCount < visualCount) {
+                    for (let i = visualCount - 1; i >= currentCount; i--) {
+                        if (organismElements[type][i]) {
+                           organismContainer.removeChild(organismElements[type][i]);
+                        }
+                        organismElements[type].pop();
+                    }
+                }
+            });
+        }
+        
+        function getBottleBounds() {
+            const bottleRect = bottleMainContainer.getBoundingClientRect();
+            // 瓶子内部的有效边界
+            return {
+                left: bottleRect.left + bottleRect.width * 0.25,
+                right: bottleRect.left + bottleRect.width * 0.75,
+                top: bottleRect.top + bottleRect.height * (1 - liquidHeight) + 25, // 顶部留出空间
+                bottom: bottleRect.top + bottleRect.height * 0.9 - 10 // 底部留出空间
+            };
+        }
+
+        function setRandomPosition(icon) {
+            const bounds = getBottleBounds();
+            const containerRect = organismContainer.getBoundingClientRect();
+
+            let x = Math.random() * (bounds.right - bounds.left) + bounds.left;
+            let y = Math.random() * (bounds.bottom - bounds.top) + bounds.top;
+            
+            icon.style.left = `${x - containerRect.left}px`;
+            icon.style.top = `${y - containerRect.top}px`;
+            icon.style.transform = `translate(0, 0)`;
+        }
+
+        function animateOrganisms() {
+            const bounds = getBottleBounds();
+            const containerRect = organismContainer.getBoundingClientRect();
+            
+            Object.keys(organismElements).forEach(type => {
+                if (organismElements[type]) {
+                    organismElements[type].forEach(icon => {
+                        const currentX = parseFloat(icon.style.left) + containerRect.left;
+                        const currentY = parseFloat(icon.style.top) + containerRect.top;
+                        
+                        let newX = currentX + (Math.random() - 0.5) * 5;
+                        let newY = currentY + (Math.random() - 0.5) * 5;
+
+                        newX = Math.max(bounds.left, Math.min(bounds.right, newX));
+                        newY = Math.max(bounds.top, Math.min(bounds.bottom, newY));
+                        
+                        icon.style.left = `${newX - containerRect.left}px`;
+                        icon.style.top = `${newY - containerRect.top}px`;
+                    });
+                }
+            });
+        }
+
+        document.querySelectorAll('#final-step-panel .grid-item').forEach(item => {
+            item.id = "vaseline-item";
+            item.addEventListener('click', () => {
+                if (!population.vaseline) {
+                    population.vaseline = true;
+                    item.classList.add('selected');
+                    
+                    systemStatusSpan.textContent = '密封中...';
+                    
+                    const cork = document.getElementById('bottle-cork');
+                    cork.style.transform = 'translateY(30px)';
+                    
+                    setTimeout(() => {
+                        systemStatusSpan.textContent = '您的生态瓶制作完成';
+                        setTimeout(() => {
+                            systemStatusSpan.textContent = '';
+                        }, 3000);
+                    }, 500);
+
+                    isSealed = true;
+                    updateStage('sealed');
+                    simulationInterval = setInterval(runSimulation, 1000);
+                    organismAnimationInterval = setInterval(animateOrganisms, 1000);
+                }
+            });
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            clearInterval(simulationInterval);
+            clearInterval(organismAnimationInterval);
+            isSealed = false;
+            isDay = true;
+            body.classList.remove('night');
+            nightOverlay.style.display = 'none';
+            systemStatusSpan.classList.remove('warning');
+            
+            resources.oxygen = 100;
+            resources.co2 = 0;
+            resources.nutrient = 50;
+            population.water = false;
+            population.silt = false;
+            population.sand = false;
+            population.vaseline = false;
+            Object.keys(population).forEach(key => {
+                if (key.startsWith('plant') || key.startsWith('animal')) population[key] = 0;
+            });
+            organismElements = {};
+
+            document.querySelectorAll('.grid-item').forEach(el => el.classList.remove('selected', 'disabled'));
+            document.querySelectorAll('.item-count-badge').forEach(badge => badge.style.display = 'none');
+            bottleCork.style.transform = 'translateY(0)';
+            liquidPath.setAttribute('d', '');
+            sedimentPath.setAttribute('d', '');
+            sedimentPath.classList.remove('silt-color', 'sand-color');
+            
+            updateStage('initial');
+            updateUI();
+        });
+
+        dayNightBtn.addEventListener('click', () => {
+            isDay = !isDay;
+            if (isDay) {
+                body.classList.remove('night');
+                nightOverlay.style.display = 'none';
+                dayNightBtn.textContent = '夜晚模式';
+            } else {
+                body.classList.add('night');
+                nightOverlay.style.display = 'flex';
+                dayNightBtn.textContent = '白天模式';
+            }
+        });
+
+        function checkReadyForOrganisms() {
+            if (population.water && (population.silt || population.sand)) {
+                updateStage('organisms');
+            }
+        }
+        
+        function checkReadyToSeal() {
+            const hasPlants = population.plant1 > 0 || population.plant2 > 0 || population.plant3 > 0;
+            const hasAnimals = population.animal1 > 0 || population.animal2 > 0 || population.animal3 > 0 || population.animal4 > 0 || population.animal5 > 0;
+            
+            if (hasPlants && hasAnimals) {
+                finalStepPanel.classList.remove('disabled');
+            } else {
+                finalStepPanel.classList.add('disabled');
+            }
+        }
+
+        // 模拟逻辑
+        function runSimulation() {
+            let totalO2Change = 0;
+            let totalCO2Change = 0;
+            let totalNutrientChange = 0;
+            
+            const allOrganisms = Object.keys(population).filter(key => key.startsWith('plant') || key.startsWith('animal'));
+            
+            allOrganisms.forEach(key => {
+                const count = population[key];
+                if (count <= 0) return;
+
+                const rates = organismSpecificRates[key];
+                
+                if (key.startsWith('plant')) {
+                    if (isDay) {
+                        totalO2Change += (rates.o2_prod * count);
+                        totalCO2Change -= (rates.co2_con * count);
+                    }
+                    totalO2Change -= rates.o2_con * count;
+                    totalCO2Change += rates.co2_prod * count;
+                    totalNutrientChange += rates.waste_prod * count;
+                }
+                else {
+                    totalO2Change -= rates.o2_con * count;
+                    totalCO2Change += rates.co2_prod * count;
+                    totalNutrientChange += rates.waste_prod * count;
+                }
+            });
+
+            resources.oxygen += totalO2Change;
+            resources.co2 += totalCO2Change;
+            resources.nutrient += totalNutrientChange;
+
+            resources.oxygen = Math.max(0, Math.min(100, resources.oxygen));
+            resources.co2 = Math.max(0, Math.min(100, resources.co2));
+            resources.nutrient = Math.max(0, Math.min(100, resources.nutrient));
+            
+            allOrganisms.forEach(key => {
+                if (population[key] <= 0) return;
+
+                if (key.startsWith('animal') && resources.oxygen < 10) {
+                    population[key] -= 0.1;
+                }
+                
+                if (key.startsWith('plant') && resources.co2 > 90) {
+                    population[key] -= 0.1;
+                }
+
+                if (resources.nutrient > 90) {
+                    population[key] -= 0.05;
+                }
+            });
+
+            if (population.silt) {
+                resources.nutrient -= 0.2;
+            } else if (population.sand) {
+                resources.nutrient -= 0.05;
+            }
+            
+            const o2Bar = document.getElementById('oxygen-bar');
+            const co2Bar = document.getElementById('co2-bar');
+            const nutrientBar = document.getElementById('nutrient-bar');
+            
+            systemStatusSpan.classList.remove('warning');
+            o2Bar.style.backgroundColor = '#66bb6a';
+            co2Bar.style.backgroundColor = '#66bb6a';
+            nutrientBar.style.backgroundColor = '#66bb6a';
+
+            if (resources.oxygen < 10) {
+                systemStatusSpan.textContent = "警告：生态系统正在缺氧！";
+                systemStatusSpan.classList.add('warning');
+                o2Bar.style.backgroundColor = '#e57373';
+            } else if (resources.co2 > 90) {
+                systemStatusSpan.textContent = "警告：生态系统二氧化碳浓度过高！";
+                systemStatusSpan.classList.add('warning');
+                co2Bar.style.backgroundColor = '#e57373';
+            } else if (resources.nutrient > 90) {
+                 systemStatusSpan.textContent = "警告：生态系统营养物过多！";
+                 systemStatusSpan.classList.add('warning');
+                 nutrientBar.style.backgroundColor = '#e57373';
+            } else {
+                systemStatusSpan.textContent = "生态系统健康稳定。";
+            }
+
+            if (allOrganisms.every(key => Math.round(population[key]) <= 0)) {
+                clearInterval(simulationInterval);
+                clearInterval(organismAnimationInterval);
+                systemStatusSpan.textContent = "生态系统崩溃了。所有生物都已死亡。";
+                systemStatusSpan.classList.add('warning');
+            }
+
+            updateUI();
+        }
+
+        // 初始化UI
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStage('initial');
+            updateUI();
+        });
+    </script>
+</body>
+</html>
