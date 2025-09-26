@@ -666,7 +666,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { title: { display: true, text: '天数' }, min: 0, max: 7 },
+                    x: { title: { display: true, text: '天数' }, min: 0 },
                     y: { title: { display: true, text: '浓度' }, min: 0 }
                 },
                 plugins: { legend: { display: true } },
@@ -950,7 +950,8 @@
 
         day += 0.1;
         if (chartInstance) {
-            if (chartInstance.data.labels.length > 50) {
+            // 保持图表只显示最近30个数据点
+            if (chartInstance.data.labels.length > 20) {
                 chartInstance.data.labels.shift();
                 chartInstance.data.datasets[0].data.shift();
                 chartInstance.data.datasets[1].data.shift();
